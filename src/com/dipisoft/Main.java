@@ -8,7 +8,7 @@ import java.net.Socket;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        Socket s = null;
+        Socket socket = null;
         Chat chat = new Chat();
 
         int port = 8080;
@@ -16,19 +16,21 @@ public class Main {
         System.out.println(">> Servidor escuchando en el puerto " + port + "...");
 
         while (true) {
-            s = ss.accept();
-            Hilo worker = new Hilo(s, chat);
-            worker.start();
+            socket = ss.accept();
+            ChatThread ct = new ChatThread(socket, chat);
+            ChatUpdateThread cut = new ChatUpdateThread(socket, chat);
+            ct.start();
+            cut.start();
         }
     }
 
-    static class Hilo extends Thread {
+    static class ChatThread extends Thread {
         private Socket s = null;
         private ObjectInputStream ois = null;
         private ObjectOutputStream oos = null;
         private final Chat chat;
 
-        public Hilo(Socket socket, Chat chat) {
+        public ChatThread(Socket socket, Chat chat) {
             this.s = socket;
             this.chat = chat;
         }
@@ -75,6 +77,31 @@ public class Main {
                 }
             }
 
+        }
+    }
+
+    // Experimento, thread adicional para controlar los mensajes nuevos
+    private static class ChatUpdateThread extends Thread {
+        private Socket s = null;
+        private ObjectInputStream ois = null;
+        private ObjectOutputStream oos = null;
+        private final Chat chat;
+
+        public ChatUpdateThread(Socket socket, Chat chat) {
+            this.s = socket;
+            this.chat = chat;
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    String message = chat.getNewMessage();
+                    //TODO notificar a clientes y enviar el último mensaje
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }
