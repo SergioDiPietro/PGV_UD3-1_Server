@@ -1,9 +1,19 @@
 package com.dipisoft;
 
-import java.util.ArrayList;
-
 public class Chat {
-    private ArrayList<String> arrMessages;
+    private String chat = "";
+    private boolean empty = true;
 
-    public Chat() {}
+    public synchronized void putMessage(String message) {
+        if (empty) {
+            chat = message;
+            empty = false;
+        } else chat = chat + "\n" + message;
+        notifyAll();
+    }
+
+    public String getChat() {
+        if (empty) return "<Chat vacío>";
+        else return chat;
+    }
 }
