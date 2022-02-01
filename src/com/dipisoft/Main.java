@@ -40,26 +40,27 @@ public class Main {
                 ois = new ObjectInputStream(s.getInputStream());
                 oos = new ObjectOutputStream(s.getOutputStream());
 
+                oos.writeObject("Introduzca su nombre de usuario: ");
                 String username = (String) ois.readObject();
 
-                oos.writeObject(chat.getChat());
-                System.out.println("Se ha enviado el chat al usuario '" + username + "'");
+                oos.writeObject("Historial de chat:\n" + chat.getChat());
+                System.out.println(">> Se ha enviado el chat al usuario '" + username + "'");
 
                 String receivedText = (String)ois.readObject();
-
-                if (receivedText.startsWith("message:")) {
-                    chat.putMessage("[" + System.currentTimeMillis() + "] " + username +
-                            receivedText.substring(("message").length()));
-                    System.out.println(">> Se ha agregado un mensaje al chat...");
-                } else if (receivedText.equals("bye")) {
-                    oos.writeObject("Goodbye!");
-                    System.out.println(">> Se ha finalizado la conexión con '" + username + "'");
-                } else {
-                    oos.writeObject("Mensaje incorrecto e ignorado...");
-                    System.out.println(">> Se ha ignorado un mensaje...");
+                while (!receivedText.equals("bye")) {
+                    if (receivedText.startsWith("message:")) {
+                        chat.putMessage("[" + System.currentTimeMillis() + "] " + username +
+                                receivedText.substring(("message").length()));
+                        oos.writeObject("Mensaje enviado.");
+                        System.out.println(">> Se ha agregado un mensaje de '" + username + "' al chat...");
+                    } else {
+                        oos.writeObject("Mensaje incorrecto, ignorando...");
+                        System.out.println("Mensaje de '" + username + "' incorrecto, ignorando...");
+                    }
+                    receivedText = (String)ois.readObject();
                 }
-
-                System.out.println(chat.getChat());
+                oos.writeObject("goodbye");
+                System.out.println(">> Se ha finalizado la conexión con '" + username + "'");
 
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
