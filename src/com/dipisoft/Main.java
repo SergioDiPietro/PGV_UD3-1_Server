@@ -18,9 +18,7 @@ public class Main {
         while (true) {
             socket = ss.accept();
             ChatThread ct = new ChatThread(socket, chat);
-            ChatUpdateThread cut = new ChatUpdateThread(socket, chat);
             ct.start();
-            cut.start();
         }
     }
 
@@ -42,25 +40,44 @@ public class Main {
                 ois = new ObjectInputStream(s.getInputStream());
                 oos = new ObjectOutputStream(s.getOutputStream());
 
-                oos.writeObject("Introduzca su nombre de usuario: ");
                 String username = (String) ois.readObject();
 
-                oos.writeObject("Historial de chat:\n" + chat.getChat());
+                oos.writeObject("¡Bienvenido al chat! Historial de chat:\n");
+                System.out.println("Mensaje inicial enviado al cliente");
+
+                oos.writeObject(chat.getChat(0));
                 System.out.println(">> Se ha enviado el chat al usuario '" + username + "'");
 
-                String receivedText = (String)ois.readObject();
-                while (!receivedText.equals("bye")) {
-                    if (receivedText.startsWith("message:")) {
-                        chat.putMessage("[" + System.currentTimeMillis() + "] " + username +
-                                receivedText.substring(("message").length()));
-                        oos.writeObject("Mensaje enviado.");
+                while (true) {
+                    String clientResponse = String.valueOf(ois.readObject());
+                    System.out.println("----------- " + clientResponse);
+
+                    String svResponse;
+                    if (clientResponse.equals("bye")) break;
+                    else if (clientResponse.startsWith("message:")) {
+                        String currentTime = String.valueOf(java.time.LocalDateTime.now());
+                        chat.putMessage(username + " [" + currentTime.substring(11,19) + "]" +
+                                clientResponse.substring(("message:").length()));
+
+                        svResponse = "Mensaje enviado.";
                         System.out.println(">> Se ha agregado un mensaje de '" + username + "' al chat...");
+
                     } else {
-                        oos.writeObject("Mensaje incorrecto, ignorando...");
+                        svResponse = "Mensaje incorrecto, ignorando...";
                         System.out.println("Mensaje de '" + username + "' incorrecto, ignorando...");
                     }
-                    receivedText = (String)ois.readObject();
+
+                    oos.writeObject(svResponse);
+
+                    int clientMessagesCount = (int) ois.readObject();
+
+                    if (chat.getChatSize() > clientMessagesCount) {
+                        oos.writeObject(chat.getFilteredChat(clientMessagesCount, username));
+                    } else {
+                        oos.writeObject("");
+                    }
                 }
+
                 oos.writeObject("goodbye");
                 System.out.println(">> Se ha finalizado la conexión con '" + username + "'");
 
@@ -77,31 +94,6 @@ public class Main {
                 }
             }
 
-        }
-    }
-
-    // Experimento, thread adicional para controlar los mensajes nuevos
-    private static class ChatUpdateThread extends Thread {
-        private Socket s = null;
-        private ObjectInputStream ois = null;
-        private ObjectOutputStream oos = null;
-        private final Chat chat;
-
-        public ChatUpdateThread(Socket socket, Chat chat) {
-            this.s = socket;
-            this.chat = chat;
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    String message = chat.getNewMessage();
-                    //TODO notificar a clientes y enviar el último mensaje
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 }

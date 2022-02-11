@@ -1,29 +1,35 @@
 package com.dipisoft;
 
-public class Chat {
-    private String chat = "";
-    private String lastMessage = "";
-    private boolean empty = true;
-    private boolean newMessage = false;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class Chat extends Thread {
+    List<String> chat = Collections.synchronizedList(new ArrayList<>());
+
+    public Chat () {}
 
     public synchronized void putMessage(String message) {
-        lastMessage = message;
-        newMessage = true;
-        if (empty) {
-            chat = message;
-            empty = false;
-        } else chat = chat + "\n" + message;
-        notifyAll();
+        chat.add(message);
     }
 
-    public String getChat() {
-        if (empty) return "<Chat vacío>";
-        else return chat;
+    public String getChat(int fromIndex) {
+        String chatString = "";
+        for (int i = fromIndex; i < chat.size(); i++) {
+            chatString += chat.get(i) + "\n";
+        }
+        return chatString;
     }
 
-    public synchronized String getNewMessage() throws InterruptedException {
-        while (!newMessage) wait();
+    public int getChatSize() {
+        return chat.size();
+    }
 
-        return lastMessage;
+    public String getFilteredChat(int fromIndex, String username) {
+        String chatString = "";
+        for (int i = fromIndex; i < chat.size(); i++) {
+            if (!(chat.get(i).contains(username))) chatString += chat.get(i) + "\n";
+        }
+        return chatString;
     }
 }
