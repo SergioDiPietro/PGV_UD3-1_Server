@@ -50,7 +50,6 @@ public class Main {
 
                 while (true) {
                     String clientResponse = String.valueOf(ois.readObject());
-                    System.out.println("----------- " + clientResponse);
 
                     String svResponse;
                     if (clientResponse.equals("bye")) break;
